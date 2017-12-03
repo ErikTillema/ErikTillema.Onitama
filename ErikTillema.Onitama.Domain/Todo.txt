@@ -1,0 +1,37 @@
+﻿	TODO
+
+- give score to GameState: higher score is higher probability of winning
+- do deeper search by not investigating branches with low score
+- assume also that opponent will not follow low score branches?
+
+	OTHER RULES
+- Keeping the king on the base seems to make a lot of sense to me, certainly when the king's attacking power is not necessary.
+- it seems that the tiger card (and maybe dragon) is more valuable than other cards. 
+  It makes sense to keep valuable cards for the right moment, rather than playing them and giving them to the opponent.
+
+	SCORING GENERAL OBSERVATIONS
+- more pawns is better than less pawns
+- losing a pawn is ok if you can retake a pawn after
+- pawns that cannot be captured are better
+- pawns close to attacking the enemy base or king are better
+- find paths to enemy base?
+- more paths are better?
+
+	SCORING
+- winning position has score +infinity
+- losing position has score -infinity
+- create a family of static evaluation functions, based on a number of properties:
++ material: number of pawns
++ mobility: number of moves that can be made
+? center control
++ exposed: 1 or 2 targets: king stands on base or not
++ king safety: squares between enemy and king
++ base safety: squares between enemy and base
+
+
+	HOW TO MAXIMIZE SCORE
+- do minimax
+- alpha beta search:
+	https://en.wikipedia.org/wiki/Minimax
+	https://www.cs.cornell.edu/courses/cs312/2002sp/lectures/rec21.htm
+	http://stackoverflow.com/questions/1291377/how-to-create-a-good-evaluation-function-for-a-game

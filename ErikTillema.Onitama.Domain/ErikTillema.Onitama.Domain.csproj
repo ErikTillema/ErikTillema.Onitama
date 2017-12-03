@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{8AC2FB9D-3B46-4382-ACD3-ADC07CB2F99E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ErikTillema.Onitama.Domain</RootNamespace>
+    <AssemblyName>ErikTillema.Onitama.Domain</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Board.cs" />
+    <Compile Include="Card.cs" />
+    <Compile Include="Events.cs" />
+    <Compile Include="Game.cs" />
+    <Compile Include="GameClients\AlphaBetaSearch.cs" />
+    <Compile Include="GameClients\AlphaBetaSearchGameClient.cs" />
+    <Compile Include="GameClients\Evaluator.cs" />
+    <Compile Include="GameClients\GameUtil.cs" />
+    <Compile Include="GameClients\IEvaluator.cs" />
+    <Compile Include="GameClients\MaterialEvaluation.cs" />
+    <Compile Include="GameClients\MiniMax.cs" />
+    <Compile Include="GameClients\MovePawnsToKingGameClient.cs" />
+    <Compile Include="GameClients\MovePawnsToBaseGameClient.cs" />
+    <Compile Include="GameClients\MovePawnsToTargetGameClient.cs" />
+    <Compile Include="GameClients\MoveForwardGameClient.cs" />
+    <Compile Include="GameServer.cs" />
+    <Compile Include="IGameClient.cs" />
+    <Compile Include="GameState.cs" />
+    <Compile Include="GamePlayer.cs" />
+    <Compile Include="PieceType.cs" />
+    <Compile Include="PlayerColor.cs" />
+    <Compile Include="Turn.cs" />
+    <Compile Include="GameResult.cs" />
+    <Compile Include="TurnResult.cs" />
+    <Compile Include="Vector.cs" />
+    <Compile Include="Piece.cs" />
+    <Compile Include="Player.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ErikTillema\ErikTillema\ErikTillema.csproj">
+      <Project>{5dc0900f-a973-4d18-affd-ba38add3d61b}</Project>
+      <Name>ErikTillema</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Todo.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
