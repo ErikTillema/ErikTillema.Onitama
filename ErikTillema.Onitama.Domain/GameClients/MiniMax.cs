@@ -7,9 +7,24 @@ using System.Diagnostics.Contracts;
 
 namespace ErikTillema.Onitama.Domain {
 
+    /// <summary>
+    /// This MiniMax implementation (as opposed to my Alpha Beta Search implementation) looks at the board, the cards and the in turn player
+    /// and then says if the game is Winning/Losing/Undecided FOR THE PLAYER IN TURN at that moment, in that node in the tree of states.
+    /// In other words, this algorithm does not have one player in mind all the time. The tree of states therefore could look like this:
+    /// WINNING
+    ///    |
+    ///  LOSING
+    ///    |
+    /// WINNING
+    /// In order to look at the board and the cards objectively, regardless of the in turn player, when calculating the unique identifier of a 
+    /// game state we do the following:
+    /// - view the board from the perspective of the in turn player, so flip the board and flip all piece positions if in turn player = 1.
+    /// - view the cards from the perspective of the in turn player, so cards of the in turn player first, then middle card, then other players' cards.
+    /// </summary>
     public class MiniMax {
 
         public static int GetNeighboursCount; // NB: these are not correct anymore when using Parallel
+        public static int GetValidTurnsCount;
         public static int GetUniqueIdentifierCount;
         public static int PlayTurnCount;
         public static int UndoTurnCount;
@@ -32,6 +47,7 @@ namespace ErikTillema.Onitama.Domain {
 
         public MiniMax(Game game, int maxMoves, bool doChecks = true) {
             GetNeighboursCount = 0;
+            GetValidTurnsCount = 0;
             GetUniqueIdentifierCount = 0;
             PlayTurnCount = 0;
             UndoTurnCount = 0;
@@ -47,9 +63,13 @@ namespace ErikTillema.Onitama.Domain {
             }
         }
 
+        /// <summary>
+        /// Returns the GameResult and GameResults per direct Turn.
+        /// </summary>
+        /// <returns></returns>
         public Tuple<byte, Dictionary<Turn, byte>> GetGameResult() {
-            long hashcode = GetUniqueIdentifier(Game.GameState);
-            byte gameResult = GetGameResult(hashcode, 0, MaxMoves);
+            long gameStateId = GetUniqueIdentifier(Game.GameState);
+            byte gameResult = GetGameResult(gameStateId, 0, MaxMoves);
             return Tuple.Create(gameResult, DirectTurns);
         }
 
@@ -57,11 +77,11 @@ namespace ErikTillema.Onitama.Domain {
             int movesTodo = maxMoves - movesDone;
             if (GameResults.ContainsKey(gameStateId)) {
                 var res = GameResults[gameStateId];
-                if (res == GameResultLosing || res == GameResultWinning || (res >= 3 && movesTodo <= res - 3))
+                if (res == GameResultLosing || res == GameResultWinning || (res >= 3 && movesTodo <= res - 3)) {
                     return res;
-                else if (res >= 3 && movesTodo > res - 3)
+                } else if (res >= 3 && movesTodo > res - 3) {
                     GameResults.Remove(gameStateId);
-                else {
+                } else {
                     throw new InvalidOperationException("should not happen");
                 }
             }
@@ -81,15 +101,15 @@ namespace ErikTillema.Onitama.Domain {
                     } else {
                         long gameStateIdNb = GetUniqueIdentifier(Game.GameState);
                         if (GameResults.ContainsKey(gameStateIdNb) && GameResults[gameStateIdNb] == GameResultCalculating) {
-                            continue; // skip states that we've already seen. @@@ but shouldn't we only avoid states for which InTurnPlayerIndex is same?
+                            continue; // skip states that we've already seen. But shouldn't we only avoid states for which InTurnPlayerIndex is same? I don't think it really matters: our algorithm doesn't have one of the two players in mind.
                         }
 
-                        byte isWinningState = GetGameResult(gameStateIdNb, movesDone + 1, maxMoves);
-                        if (isWinningState == GameResultLosing) {
+                        byte resultNb = GetGameResult(gameStateIdNb, movesDone + 1, maxMoves);
+                        if (resultNb == GameResultLosing) {
                             result = GameResultWinning;
                             if (movesDone == 0) DirectTurns.Add(tup.Item1, GameResultWinning); // this move is winning, so also result for current state is winning
                             break;
-                        } else if (isWinningState == GameResultWinning) {
+                        } else if (resultNb == GameResultWinning) {
                             if (movesDone == 0) DirectTurns.Add(tup.Item1, GameResultLosing); // this move is losing (but that doesn't mean that result for current state is losing)
                         } else { // not 0 and not 1, so outcome is undecided
                             result = (byte)(3 + movesTodo);
@@ -127,9 +147,7 @@ namespace ErikTillema.Onitama.Domain {
 
             // flip board if necessary
             bool flipHorizontal = gameState.InTurnPlayerIndex == 1;
-            Piece inTurnPlayerKing = gameState.PlayerPieces[gameState.InTurnPlayerIndex][0];
-            Piece otherPlayerKing = gameState.PlayerPieces[1 - gameState.InTurnPlayerIndex][0];
-            bool flipVertical = inTurnPlayerKing.Position.X > 2 || (inTurnPlayerKing.Position.X == 2 && otherPlayerKing.Position.X > 2);
+            // don't flip vertical: the board may be symmetric but the moves of the cards are not. So flipping the board is NOT the same state.
 
             long result = 0;
 
@@ -138,12 +156,12 @@ namespace ErikTillema.Onitama.Domain {
                 List<Piece> playerPieces = gameState.PlayerPieces[a]
                     .OrderBy(p => GetOrderingIndex(p))
                     .ThenBy(p => p.IsCaptured)
-                    .ThenBy(p => flipVertical ? -p.Position.X : p.Position.X)
+                    .ThenBy(p => p.Position.X)
                     .ThenBy(p => flipHorizontal ? -p.Position.Y : p.Position.Y).ToList();
                 for (int j = 0; j < playerPieces.Count; j++) {
                     Piece piece = playerPieces[j];
                     result *= 25 + 1; // 0 = captured, else on board.
-                    result += GetUniqueIdentifier(piece, flipHorizontal, flipVertical);
+                    result += GetUniqueIdentifier(piece, flipHorizontal);
                 }
             }
 
@@ -167,21 +185,19 @@ namespace ErikTillema.Onitama.Domain {
             else return 1; // First King, then Pawns
         }
 
-        private static int GetUniqueIdentifier(Vector position, bool flipHorizontal, bool flipVertical) {
-            Vector flipped = position;
-            flipped = flipHorizontal ? Domain.Board.FlipHorizontal(flipped) : flipped;
-            flipped = flipVertical ? Domain.Board.FlipVertical(flipped) : flipped;
-            return flipped.Y * Domain.Board.Width + flipped.X;
-        }
-
-        private static int GetUniqueIdentifier(Piece piece, bool flipHorizontal, bool flipVertical) {
+        private static int GetUniqueIdentifier(Piece piece, bool flipHorizontal) {
             if (piece.IsCaptured)
                 return 0;
             else {
-                return 1 + GetUniqueIdentifier(piece.Position, flipHorizontal, flipVertical);
+                return 1 + GetUniqueIdentifier(piece.Position, flipHorizontal);
             }
         }
 
+        private static int GetUniqueIdentifier(Vector position, bool flipHorizontal) {
+            Vector flipped = position;
+            flipped = flipHorizontal ? Domain.Board.FlipHorizontal(flipped) : flipped;
+            return flipped.Y * Domain.Board.Width + flipped.X;
+        }
 
     }
 }

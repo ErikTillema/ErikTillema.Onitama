@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Media;
 using System.Text;
 using System.Threading.Tasks;
 using ErikTillema.Collections;
@@ -19,18 +18,18 @@ namespace ErikTillema.Onitama.Domain {
 
         public GamePlayer OtherPlayer => Players[1 - GameState.InTurnPlayerIndex];
 
-        public PlayerColor InTurnPlayerColor => PlayerColors[GameState.InTurnPlayerIndex];
-
         public IList<Tuple<Turn, TurnResult>> PlayedTurns { get; }
 
         public GamePlayer WinningPlayer => GameState.WinningPlayerIndex.HasValue ? Players[GameState.WinningPlayerIndex.Value] : null;
 
         public bool IsFinished => GameState.WinningPlayerIndex.HasValue;
 
-        public Game(Player player1, Player player2) : this(player1, player2, null) { }
+        public Game(Player player1, Player player2, IReadOnlyList<Card> cardDeck = null) : this(player1, player2, null, cardDeck) { }
 
-        public Game(Player player1, Player player2, GameState gameState) {
-            GameState = gameState ?? new GameState();
+        public Game(Player player1, Player player2, GameState gameState): this(player1, player2, gameState, null) { }
+
+        private Game(Player player1, Player player2, GameState gameState, IReadOnlyList<Card> cardDeck) {
+            GameState = gameState ?? new GameState(cardDeck);
             Players = new[] { new GamePlayer(player1, 0), new GamePlayer(player2, 1) };
             Board = new Board(GameState);
             PlayedTurns = new List<Tuple<Turn, TurnResult>>();
@@ -48,9 +47,13 @@ namespace ErikTillema.Onitama.Domain {
         }
 
         public static readonly Bijection<int, PlayerColor> PlayerColors = new Bijection<int, Domain.PlayerColor>() {
-            { 0, PlayerColor.Blue },
-            { 1, PlayerColor.Red },
+            { 0, PlayerColor.Blue }, // Blue = South = playerIndex 0
+            { 1, PlayerColor.Red },  // Red  = North = playerIndex 1. Who starts is determined by the middle card.
         };
+
+        public override string ToString() {
+            return Board.ToString() + $"\nCards: {String.Join(",", GameState.GameCards.ToList())}, In turn: {InTurnPlayer.ToString()} ({InTurnPlayer.Player}), In turn player cards: {String.Join(",", GameState.InTurnPlayerCards.ToList())}";
+        }
 
     }
 }

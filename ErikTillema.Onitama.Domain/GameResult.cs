@@ -9,13 +9,15 @@ namespace ErikTillema.Onitama.Domain {
     /// <summary>
     /// Immutable
     /// </summary>
-    public class GameResult {
+    public abstract class GameResult { }
 
+    public class DrawingGameResult : GameResult { }
+
+    public class WinningGameResult : GameResult {
         public GamePlayer WinningPlayer { get; }
 
-        public GameResult(GamePlayer winningPlayer) {
+        public WinningGameResult(GamePlayer winningPlayer) {
             WinningPlayer = winningPlayer;
         }
-
     }
 }

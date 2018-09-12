@@ -58,6 +58,12 @@ namespace ErikTillema.Onitama.Domain {
             return new Vector(position.X, Height-1 - position.Y);
         }
 
+        [Pure]
+        public static bool IsWithinBounds(Vector position) {
+            return 0 <= position.X && position.X < Board.Width 
+                && 0 <= position.Y && position.Y < Board.Height;
+        }
+
         public override string ToString() {
             char[,] result = new char[Width, Height];
             for (int y = 0; y < Height; y++)

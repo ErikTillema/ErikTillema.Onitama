@@ -8,7 +8,13 @@ namespace ErikTillema.Onitama.Domain {
 
     public interface IEvaluator {
 
-        double Evaluate(Game game, int originalInTurnPlayerIndex);
+        /// <summary>
+        /// A higher score means a higher probability of winning for the in view player.
+        /// </summary>
+        /// <param name="game"></param>
+        /// <param name="inViewPlayerIndex"></param>
+        /// <returns></returns>
+        double Evaluate(Game game, int inViewPlayerIndex);
 
     }
 

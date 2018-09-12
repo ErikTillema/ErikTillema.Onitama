@@ -7,11 +7,11 @@ using ErikTillema.Onitama.Domain;
 
 namespace ErikTillema.Onitama.GameRunner {
 
-    public class SingleGameRunner {
+    public class SingleGameServer {
 
         private GameServer GameServer;
 
-        public SingleGameRunner(Player player1, Player player2) {
+        public SingleGameServer(Player player1, Player player2) {
             GameServer.GameCreated += GameServer_GameCreated;
             GameServer = new GameServer(player1, player2);
         }
@@ -20,8 +20,8 @@ namespace ErikTillema.Onitama.GameRunner {
             GameServer.TurnPlay += GameServer_TurnPlay;
             GameServer.TurnPlayed += GameServer_TurnPlayed;
             GameResult gameResult = GameServer.Run();
-
-            Console.Out.WriteLine($"Game finished, winner is {gameResult.WinningPlayer} ({gameResult.WinningPlayer.Player}) in {GameServer.Game.PlayedTurns.Count} turns (total from both players).");
+            String gameResultString = gameResult is DrawingGameResult ? "draw" : $"winner is {((WinningGameResult)gameResult).WinningPlayer} ({((WinningGameResult)gameResult).WinningPlayer.Player})";
+            Console.Out.WriteLine($"Game finished, {gameResultString} in {GameServer.Game.PlayedTurns.Count} turns (total from both players).");
         }
 
         private void GameServer_GameCreated(object sender, GameEventArgs eventArgs) {
@@ -44,9 +44,9 @@ namespace ErikTillema.Onitama.GameRunner {
         private void GameServer_TurnPlay(object sender, GameEventArgs eventArgs) {
             var game = eventArgs.Game;
             string s = "";
-            var tup = new MiniMax(game, 5, doChecks: false).GetGameResult(); // @@@ temp true/false
-            if (tup.Item1 == 0) s = $"{game.InTurnPlayer} is in a losing position. ";
-            else if (tup.Item1 == 1) s = $"{game.InTurnPlayer} is in a winning position. ";
+            //var tup = new MiniMax(game, 5, doChecks: false).GetGameResult();
+            //if (tup.Item1 == 0) s = $"{game.InTurnPlayer} is in a losing position. ";
+            //else if (tup.Item1 == 1) s = $"{game.InTurnPlayer} is in a winning position. ";
             Console.Out.WriteLine($"{game.PlayedTurns.Count + 1}. {s}{game.InTurnPlayer} has {string.Join(", ", game.GameState.InTurnPlayerCards)}");
         }
 

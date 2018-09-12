@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ErikTillema.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,16 +17,18 @@ namespace ErikTillema.Onitama.Domain {
         public PlayerColor StartingPlayerColor { get; }
 
         private IReadOnlyList<Vector> Moves;
+        private IReadOnlyList<Vector> FlippedMoves;
 
         public Card(string name, PlayerColor startingPlayerColor, IEnumerable<Vector> moves) {
             Name = name;
             StartingPlayerColor = startingPlayerColor;
-            Moves = new List<Vector>(moves);
+            Moves = moves.ToArray();
+            FlippedMoves = Moves.Select(m => new Vector(-m.X, -m.Y)).ToArray();
         }
 
         public IEnumerable<Vector> GetMoves(int playerInTurnIndex) {
             if (playerInTurnIndex == 0) return Moves;
-            else return Moves.Select(m => new Vector(-m.X, -m.Y));
+            else return FlippedMoves;
         }
 
         public bool Equals(Card other) {
@@ -87,6 +90,14 @@ namespace ErikTillema.Onitama.Domain {
             Monkey, Mantis, Horse, Ox,
             Crane, Boar, Eel, Cobra
         };
+
+        public static IReadOnlyList<Card> GetRandomCardDeck() {
+            // choose 5 cards from pile of all cards
+            // shuffle five game cards because we've only randomly selected 5 but they are not shuffled.
+            var result = RandomExt.GetRandomChooseCombination(Card.AllCards, Card.AllCards.Count, 5);
+            result.Shuffle();
+            return result.ToList();
+        }
 
     }
 }

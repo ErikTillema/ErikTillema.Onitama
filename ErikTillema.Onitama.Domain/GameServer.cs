@@ -12,18 +12,28 @@ namespace ErikTillema.Onitama.Domain {
 
         public IReadOnlyList<IGameClient> GameClients { get; }
 
-        public GameServer(Player player1, Player player2) {
-            Game = new Game(player1, player2);
+        /// <summary>
+        /// Maximum of turns before the game automatically becomes a draw.
+        /// Null means infinity.
+        /// </summary>
+        public int? MaxGameTurns { get; }
+
+        public GameServer(Player player1, Player player2, int? maxGameTurns = null, IReadOnlyList<Card> cardDeck = null) {
+            Game = new Game(player1, player2, cardDeck);
             GameClients = new[] { player1.CreateGameClient(), player2.CreateGameClient() };
+            MaxGameTurns = maxGameTurns;
 
             GameCreated?.Invoke(this, new GameEventArgs(Game, null));
         }
 
-        public GameResult Run() { // @@@ introduce a maxTurnCount, to avoid bots playing forever. Then draw?
-            while(!Game.IsFinished) {
+        public GameResult Run() {
+            int turnsPlayed = 0;
+            int maxGameTurns = MaxGameTurns ?? int.MaxValue;
+            while (!Game.IsFinished && turnsPlayed < maxGameTurns) {
                 Progress();
+                turnsPlayed++;
             }
-            GameResult result = new GameResult(Game.WinningPlayer);
+            GameResult result = Game.IsFinished ? new WinningGameResult(Game.WinningPlayer) as GameResult : new DrawingGameResult();
             GameFinished?.Invoke(this, new GameEventArgs(Game, result));
             return result;
         }

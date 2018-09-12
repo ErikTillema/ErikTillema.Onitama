@@ -19,7 +19,7 @@ namespace ErikTillema.Onitama.Domain {
     /// Kings: 25 (k) x 24 (K)                                        =  600 = 6*10^2
     /// Pawns: 23 x 22 x 21 x 20    x    19 x 18 x 17 x 16 (or less)  =  20*10^9
     /// But pawns are interchangable: / 4! x 4!                       =  24^2 = 576
-    /// And board is symmetrical in mirror through both bases         =  2           (more or less)
+    /// And board is symmetrical in mirror through both bases         =  2           (more or less)  WRONG! King mobility for example is not the same for mirrored boards, because not all cards have symmetrical moves. See todo file.
     /// Total  =  10*10^9
     /// 
     /// But pieces cannot occupy the enemies base (yet), so actually it's less. Or at least those states are final states.
@@ -54,6 +54,8 @@ namespace ErikTillema.Onitama.Domain {
 
         /// <summary>
         /// Index of the player who's turn it is. 0 or 1.
+        /// 0 = South = Blue
+        /// 1 = North = Red
         /// Stateful.
         /// </summary>
         public int InTurnPlayerIndex { get; private set; }
@@ -109,16 +111,11 @@ namespace ErikTillema.Onitama.Domain {
 
         public Card MiddleCard => GameCards[MiddleCardIndex];
 
-        public GameState() {
-            // choose 5 cards from pile of all cards
-            var gameCards = RandomExt.GetRandomChooseCombination(Card.AllCards, Card.AllCards.Count, 5).ToArray();
-            gameCards.Shuffle(); // shuffle five game cards because we've only randomly selected 5 but they are not suffled.
+        public GameState(IEnumerable<Card> cards = null) {
+            var gameCards = cards == null ? Card.GetRandomCardDeck() : cards.ToList();
             var cardNumbers = new[] { 0, 1, 2, 3, 4 };
-
             int startingPlayerIndex = Game.PlayerColors.GetKey(gameCards[MiddleCardIndex].StartingPlayerColor); // Starting player is chosen from middle card
-
             var playerPieces = GetStartingPieces();
-
             Init(playerPieces, gameCards, startingPlayerIndex, cardNumbers, new List<Piece>());
         }
 
@@ -219,7 +216,7 @@ namespace ErikTillema.Onitama.Domain {
             bool gameIsFinshed = false;
             if (captured != null && captured is King)
                 gameIsFinshed = true;
-            else if (newPosition.Equals(Domain.Board.PlayerBases[1 - InTurnPlayerIndex]))
+            else if (piece is King && newPosition.Equals(Domain.Board.PlayerBases[1 - InTurnPlayerIndex]))
                 gameIsFinshed = true;
 
             if (gameIsFinshed) {
@@ -262,11 +259,10 @@ namespace ErikTillema.Onitama.Domain {
 
         public bool IsValidMove(Piece piece, Vector move) {
             Vector newPosition = piece.Position.Add(move);
-            if (!(0 <= newPosition.X && newPosition.X < Domain.Board.Width && 0 <= newPosition.Y && newPosition.Y < Domain.Board.Height)) return false;
+            if (!Domain.Board.IsWithinBounds(newPosition)) return false;
             if (Board[newPosition.X, newPosition.Y] != null && Board[newPosition.X, newPosition.Y].PlayerIndex == InTurnPlayerIndex) return false;
             return true;
         }
-
 
     }
 

@@ -1,21 +1,38 @@
 ﻿	TODO
 
-- give score to GameState: higher score is higher probability of winning
-- do deeper search by not investigating branches with low score
-- assume also that opponent will not follow low score branches?
+- evaluate:
+	- king protection: how many squares around the king are covered by moves from my pawns?
+	- (centre) cover: how many (centre) squares are covered by my moes? This is thinking like two steps ahead but at the cost of 1 step.
+	- If we are going to evaluate stuff that involves looking at all valid turns anyway, then loop over all turns just once and calculate all values at once.
++ maybe I can set the search depth according to some info like the fan-out, so the number of moves
+	? or more advanced
+? is github up to date?
+? write check that validates read game state with game state after previous turns.
+? Am I forgetting to add capturedPieces to the stack when creating a new GameState?
+	Yes, but maybe it doesn't really matter.
++ Take fastest route to victory, take longest route to loss.
+	In other words, also when running parallel, try to make direct winning turns instead of postponing a win.
+	But I still don't get why my program would lose from a winning position... Is it possible that it was a winning position after all?
+? build a SchaakMeester: focus on center strongly.
+? I think I still have quite some time left per move. At the same time, one full level deeper might not be possible.
+	Can we improve something here, like calculating some branches deeper than others?
+? optimize calculations by assuming also that opponent will not follow low score branches? 
+- read about genetic algorithms, because my current strategy of adding children and keeping the parents leads to a very uniform population possibly.
+- alter population by breeding and removing parents. But keep the all time best performing individuals for later.
 
 	OTHER RULES
 - Keeping the king on the base seems to make a lot of sense to me, certainly when the king's attacking power is not necessary.
+  Only if other king is around, not if other king is far away.
 - it seems that the tiger card (and maybe dragon) is more valuable than other cards. 
   It makes sense to keep valuable cards for the right moment, rather than playing them and giving them to the opponent.
 
 	SCORING GENERAL OBSERVATIONS
 - more pawns is better than less pawns
-- losing a pawn is ok if you can retake a pawn after
-- pawns that cannot be captured are better
+- losing a pawn is ok if you can retake a pawn after (covered by deep searching)
+- pawns that cannot be captured are better: But this is covered by searching deeper: the pawn that can be captured will be captured in one of the child nodes
 - pawns close to attacking the enemy base or king are better
-- find paths to enemy base?
-- more paths are better?
+x find paths to enemy base (covered by deep searching)
+x more paths are better?
 
 	SCORING
 - winning position has score +infinity
@@ -23,10 +40,11 @@
 - create a family of static evaluation functions, based on a number of properties:
 + material: number of pawns
 + mobility: number of moves that can be made
-? center control
++ center control
 + exposed: 1 or 2 targets: king stands on base or not
 + king safety: squares between enemy and king
 + base safety: squares between enemy and base
++ card strength
 
 
 	HOW TO MAXIMIZE SCORE
@@ -35,3 +53,50 @@
 	https://en.wikipedia.org/wiki/Minimax
 	https://www.cs.cornell.edu/courses/cs312/2002sp/lectures/rec21.htm
 	http://stackoverflow.com/questions/1291377/how-to-create-a-good-evaluation-function-for-a-game
+
+	DONE
++ don't force adjustment of at least 0.1, but force adjustment of at least 8%.
++ why is my King always moving forward at the very first move? Potential reasons:
+	- higher KingMobility (as compared to moving a piece in front of the king)
+	- higher BaseSafety (my base is just as safe, but the enemy base is less safe)
+	- but also lower KingSafety for me of course
+	- and lower Exposure score
++ port to .NET core
++ give score to GameState: higher score is higher probability of winning
++ change individual scoring method: let individuals play against a fixed set of bots, not against each other. That way we should be able to measure progress
++ maybe don't play random matches (so random cards), but a certain subset of starting cards, that represents a normal distrubution well.
++ solve bug for different result between ABS with or without pre-ordering on evaluation score.
+	Cause: I was assuming that mirrored boards have the same score. But that's false:
+	Consider these mirrored boards with these cards:
+	OO+OO   0.425 1112690535280991 Tiger,Eel,Boar,Dragon,Ox South
+	..K..
+	.....
+	.o.o.
+	ok+.o
+            0.300 1112690535280991 Tiger,Eel,Boar,Dragon,Ox South
+	OO+OO
+	..K..
+	.....
+	.o.o.
+	o.+ko
+	Then the second has a lower evaluation score, because the King Mobility (due to assymmetrical Eel card) of the South King
+	is lower in the second case.
++ write regression test for ABS algorithm.
++ rank nodes in ABS by evaluation function
+	"For max nodes, we want to visit the best child first so that time is not wasted in the rest of the children exploring worse scenarios. 
+	 For min nodes, we want to visit the worst child first (from our perspective, not the opponent's.) 
+	 There are two obvious sources of this information:
+	 - The static evaluator function can be used to rank the child nodes
+	 - Previous searches of the game tree (for example, from previous moves) performed minimax evaluations of many game positions. If available, these values may be used to rank the nodes.""
+	I think this bullet is the same as this one:
+	do deeper search by not investigating branches with low score
++ remove mirroring from MiniMax, also there it's wrong.
++ Let's start by measuring how much time I'm using per turn.
++ Then let's start measuring also the performance difference when using ranking of nodes in ABS algorithm
++ build as Release (flag optimize code) before publishing.
+	This is already in place, see Makefile
++ are we using parallel computing when calculating one turn?
+	No we are not. Could we calculate multiple subtrees independently? What about the shared state?
+	Is this useful on the webserver? Let's test this with a dumb bot and a for-loop, either parallel for or normal for.
+	Done: calculate subtrees in parallel.
++ at a certain point, to keep variation in the population, start from scratch and find good bots.

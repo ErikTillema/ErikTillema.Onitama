@@ -22,21 +22,23 @@ namespace ErikTillema.Onitama.Domain {
         }
 
         public Turn GetTurn(Game game) {
-            var tup = new MiniMax(game, 3, doChecks: false).GetGameResult(); // @@@ temp true/false
-            if (tup.Item1 == 0) {
+            var tup = new MiniMax(game, 2, doChecks: false).GetGameResult();
+            if (tup.Item1 == MiniMax.GameResultLosing) {
                 // we're fucked
-            } else if (tup.Item1 == 1) {
+            } else if (tup.Item1 == MiniMax.GameResultWinning) {
+                // we're winning.
+                // let's not extend the misery of the opponent and take a directly winning turn when we get one.
                 Turn winningTurn = game.GetDirectlyWinningTurn();
                 if (winningTurn != null) return winningTurn;
 
-                var turn = tup.Item2.First(kvp => kvp.Value == 1).Key;
+                var turn = tup.Item2.First(kvp => kvp.Value == MiniMax.GameResultWinning).Key;
                 return turn;
             }
 
             //Turn capturingTurn = MiniMax.GetCapturingTurn(game);
             //if (capturingTurn != null) return capturingTurn;
 
-            // make the move that brings the pawns closest to the enemy base
+            // make the move that brings the pawns closest to the target
             Vector target = GetTarget(game);
             var pawns = game.GameState.InTurnPlayerPieces.Where(p => p is Pawn).ToList();
             List<int> bestDistances = pawns.Select(p => Board.GetDistance(target, p.Position)).OrderBy(_ => _).ToList();
@@ -49,7 +51,7 @@ namespace ErikTillema.Onitama.Domain {
                 piece.Position = position;
 
                 if (Compare(trialDistances, bestDistances) < 0) {
-                    if (tup.Item2.ContainsKey(turn) && tup.Item2[turn] == 0) {
+                    if (tup.Item2.ContainsKey(turn) && tup.Item2[turn] == MiniMax.GameResultLosing) {
                         // skip, don't play a losing move (if possible)
                     } else {
                         bestDistances = trialDistances;
@@ -59,9 +61,9 @@ namespace ErikTillema.Onitama.Domain {
             }
             if (bestTurn != null) return bestTurn;
 
-            if(tup.Item1 != 0) {
+            if(tup.Item1 != MiniMax.GameResultLosing) {
                 // make any non-losing move
-                return tup.Item2.First(kvp => kvp.Value != 0).Key;
+                return tup.Item2.First(kvp => kvp.Value != MiniMax.GameResultLosing).Key;
             } else {
                 // we're fucked anyway, make any move
                 return game.GetAnyTurn();
